@@ -29,31 +29,18 @@ static void cleanup(void);
 void (*tet_startup)(void) = startup;
 void (*tet_cleanup)(void) = cleanup;
 
-static void utc_app_manager_foreach_running_app_p(void);
-static void utc_app_manager_foreach_running_app_n(void);
 static void utc_app_manager_is_running_p(void);
 static void utc_app_manager_is_running_n(void);
-static void  utc_app_manager_set_app_list_changed_cb_p(void);
-static void  utc_app_manager_set_app_list_changed_cb_n(void);
-static void  utc_app_manager_unset_app_list_changed_cb_p(void);
 static void utc_app_manager_foreach_app_context_p(void);
 static void utc_app_manager_foreach_app_context_n(void);
 static void utc_app_manager_foreach_app_info_p(void);
 static void utc_app_manager_foreach_app_info_n(void);
-//static void utc_app_manager_foreach_service_app_info_p(void);
-//static void utc_app_manager_foreach_service_app_info_n(void);
-//static void utc_app_manager_foreach_ui_app_info_p(void);
-//static void utc_app_manager_foreach_ui_app_info_n(void);
 static void utc_app_manager_get_app_id_p(void);
 static void utc_app_manager_get_app_id_n(void);
 static void utc_app_manager_get_app_context_p(void);
 static void utc_app_manager_get_app_context_n(void);
 static void utc_app_manager_get_package_p(void);
 static void utc_app_manager_get_package_n(void);
-static void utc_app_manager_get_service_app_info_p(void);
-static void utc_app_manager_get_service_app_info_n(void);
-static void utc_app_manager_get_ui_app_info_p(void);
-static void utc_app_manager_get_ui_app_info_n(void);
 static void utc_app_manager_resume_app_p(void);
 static void utc_app_manager_resume_app_n(void);
 static void utc_app_manager_set_app_context_event_cb_p(void);
@@ -62,37 +49,20 @@ static void utc_app_manager_set_app_info_event_cb_p(void);
 static void utc_app_manager_set_app_info_event_cb_n(void);
 static void utc_app_manager_terminate_app_p(void);
 static void utc_app_manager_terminate_app_n(void);
-static void utc_app_manager_get_app_info_p(void);
-static void utc_app_manager_get_app_info_n(void);
 
 struct tet_testlist tet_testlist[] = {
-	{ utc_app_manager_foreach_running_app_p, 1 },
-	{ utc_app_manager_foreach_running_app_n, 2 },
 	{ utc_app_manager_is_running_p, 1},
 	{ utc_app_manager_is_running_n, 2},
-	{ utc_app_manager_set_app_list_changed_cb_p, 1},
-	{ utc_app_manager_set_app_list_changed_cb_n, 2},
-	{ utc_app_manager_unset_app_list_changed_cb_p, 1},
 	{ utc_app_manager_foreach_app_context_p, 1},
 	{ utc_app_manager_foreach_app_context_n, 2},
 	{ utc_app_manager_foreach_app_info_p, 1},
 	{ utc_app_manager_foreach_app_info_n, 2},
-	//{ utc_app_manager_foreach_service_app_info_p, 1},
-	//{ utc_app_manager_foreach_service_app_info_n, 2},
-	//{ utc_app_manager_foreach_ui_app_info_p, 1},
-	//{ utc_app_manager_foreach_ui_app_info_n, 2},
 	{ utc_app_manager_get_app_id_p, 1},
 	{ utc_app_manager_get_app_id_n, 2},
 	{ utc_app_manager_get_app_context_p, 1},
 	{ utc_app_manager_get_app_context_n, 2},
-	{ utc_app_manager_get_app_info_p, 1},
-	{ utc_app_manager_get_app_info_n, 2},
 	{ utc_app_manager_get_package_p, 1},
 	{ utc_app_manager_get_package_n, 2},
-	{ utc_app_manager_get_service_app_info_p, 1},
-	{ utc_app_manager_get_service_app_info_n, 2},
-	{ utc_app_manager_get_ui_app_info_p, 1},
-	{ utc_app_manager_get_ui_app_info_n, 2},
 	{ utc_app_manager_resume_app_p, 1},
 	{ utc_app_manager_resume_app_n, 2},
 	{ utc_app_manager_set_app_context_event_cb_p, 1},
@@ -114,29 +84,12 @@ static void cleanup(void)
 	/* end of TC */
 }
 
-static bool running_app_cb(const char* package_name, void* user_data)
-{
-    LOGD("package name : %s", package_name);
-
-    return true;
-}
-
 static bool app_context_cb(app_context_h app_context, void * user_data)
 {
 	return true;
 }
 
 static bool app_info_cb(app_info_h app_info, void * user_data)
-{
-	return true;
-}
-
-static bool service_app_info_cb(service_app_info_h service_app_info, void *user_data)
-{
-	return true;
-}
-
-static bool ui_app_info_cb(ui_app_info_h ui_app_info, void *user_data)
 {
 	return true;
 }
@@ -149,70 +102,12 @@ static void app_mgr_info_event_cb (app_info_h app_info, app_info_event_e event, 
 {
 }
 
-static void dts_app_manager_app_list_changed_cb(app_manger_event_type_e event_type, 
-						   const char *package, void *user_data)
-{
-	LOGD("package name : %s", package);
-}
-
-/**
- * @brief Negative test case of app_manager_foreach_app_running()
- */
-static void utc_app_manager_foreach_running_app_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_app_running(running_app_cb, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE)
-	{
-		dts_fail("utc_app_manager_foreach_running_app_p", "faied");
-	}
-	else
-	{
-		dts_pass("utc_app_manager_foreach_running_app_p", "passed");
-	}
-}
-
-/**
- * @brief Negative test case of app_manager_foreach_app_running()
- */
-static void utc_app_manager_foreach_running_app_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_app_running(NULL, NULL);
-
-	if(ret == APP_MANAGER_ERROR_NONE)
-	{
-		dts_fail("utc_app_manager_foreach_running_app_n", "faied");
-	}
-	else
-	{
-		dts_pass("utc_app_manager_foreach_running_app_n", "passed");
-	}
-}
-
-static bool get_first_app_cb(const char* package_name, void* user_data)
-{
-    int name_len = strlen(package_name);
-
-    strncpy((char*)user_data, package_name, name_len);
-
-    return false;
-}
-
 static void utc_app_manager_is_running_p(void)
 {
     int ret = APP_MANAGER_ERROR_NONE;
-    char pkg_first_name[256];
     bool is_running = false;
 
-    app_manager_foreach_app_running(get_first_app_cb, pkg_first_name);
-
-    LOGD("first package [%s]", pkg_first_name);
-
-    ret = app_manager_is_running(pkg_first_name, &is_running);
+    ret = app_manager_is_running("org.tizen.indicator", &is_running);
 
     if(ret == APP_MANAGER_ERROR_NONE){
         dts_pass("utc_app_manager_is_running_p", "passed");
@@ -231,41 +126,6 @@ static void utc_app_manager_is_running_n(void)
     }else{
         dts_fail("utc_app_manager_is_running_p", "failed");
     }
-}
-
-static void  utc_app_manager_set_app_list_changed_cb_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_set_app_list_changed_cb(dts_app_manager_app_list_changed_cb, NULL);
-
-	if(ret == APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_is_running_p", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_is_running_p", "failed");
-   	}
-
-	app_manager_unset_app_list_changed_cb();
-}
-
-static void  utc_app_manager_set_app_list_changed_cb_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_set_app_list_changed_cb(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_is_running_p", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_is_running_p", "failed");
-	}
-
-	app_manager_unset_app_list_changed_cb();
-
 }
 
 static void  utc_app_manager_set_app_context_event_cb_p(void)
@@ -313,7 +173,6 @@ static void  utc_app_manager_set_app_info_event_cb_p(void)
 	}
 }
 
-
 static void  utc_app_manager_set_app_info_event_cb_n(void)
 {
 	int ret = APP_MANAGER_ERROR_NONE;
@@ -328,68 +187,6 @@ static void  utc_app_manager_set_app_info_event_cb_n(void)
 		dts_fail("utc_app_manager_set_app_info_event_cb_n", "failed");
 	}
 }
-
-/*
-static void  utc_app_manager_foreach_service_app_info_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_service_app_info(service_app_info_cb, NULL);
-
-	if(ret == APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_foreach_service_app_info_p", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_foreach_service_app_info_p", "failed");
-	}
-}
-
-static void  utc_app_manager_foreach_service_app_info_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_service_app_info(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_foreach_service_app_info_n", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_foreach_service_app_info_n", "failed");
-	}
-}
-
-static void  utc_app_manager_foreach_ui_app_info_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_ui_app_info(service_app_info_cb, NULL);
-
-	if(ret == APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_foreach_ui_app_info_p", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_foreach_ui_app_info_p", "failed");
-	}
-}
-
-static void  utc_app_manager_foreach_ui_app_info_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	ret = app_manager_foreach_ui_app_info(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_foreach_ui_app_info_n", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_foreach_ui_app_info_n", "failed");
-	}
-}
-*/
 
 static void  utc_app_manager_foreach_app_context_p(void)
 {
@@ -472,7 +269,7 @@ static void  utc_app_manager_get_app_id_p(void)
 	pid_t pid;
 	char * appid;
 	app_context_h app_context;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	ret = app_context_get_pid(app_context, &pid);
 	ret = app_manager_get_app_id(pid, &appid);
 
@@ -491,7 +288,7 @@ static void  utc_app_manager_resume_app_p(void)
 	char appid[256];
 	app_context_h app_context = NULL;
 
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret == APP_MANAGER_ERROR_NONE){
 		ret = app_manager_resume_app(app_context);
 		if (ret == APP_MANAGER_ERROR_NONE)
@@ -523,7 +320,7 @@ static void  utc_app_manager_terminate_app_p(void)
 	char appid[256];
 	app_context_h app_context = NULL;
 
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret == APP_MANAGER_ERROR_NONE){
 		ret = app_manager_terminate_app(app_context);
 		if (ret == APP_MANAGER_ERROR_NONE)
@@ -549,7 +346,6 @@ static void  utc_app_manager_terminate_app_n(void)
 	}
 }
 
-
 static void  utc_app_manager_get_app_context_n(void)
 {
 	int ret = APP_MANAGER_ERROR_NONE;
@@ -571,40 +367,12 @@ static void  utc_app_manager_get_app_context_p(void)
 	char appid[256];
 	app_context_h app_context = NULL;
 
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret == APP_MANAGER_ERROR_NONE)
 		dts_pass("utc_app_manager_get_app_contaxt_p", "passed");
 	else
 		dts_fail("utc_app_manager_get_app_context_p", "failed");
 
-}
-
-static void  utc_app_manager_get_app_info_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	ret = app_manager_get_app_info(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_get_app_info_n", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_get_app_info_n", "failed");
-	}
-
-}
-
-static void  utc_app_manager_get_app_info_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	char appid[256];
-	app_info_h app_info = NULL;
-
-	ret = app_manager_get_app_info("com.samsung.indicator", &app_info);
-	if (ret == APP_MANAGER_ERROR_NONE)
-		dts_pass("utc_app_manager_get_app_info_p", "passed");
-	else
-		dts_fail("utc_app_manager_get_app_info_p", "failed");
 }
 
 static void  utc_app_manager_get_package_p(void)
@@ -613,7 +381,7 @@ static void  utc_app_manager_get_package_p(void)
 	char * package = NULL;
 	pid_t pid;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	ret = app_context_get_pid(app_context, &pid);
 	ret = app_manager_get_package(pid, &package);
 
@@ -640,76 +408,4 @@ static void  utc_app_manager_get_package_n(void)
 	{
 		dts_fail("utc_app_manager_get_package_n", "failed");
 	}
-}
-
-static void  utc_app_manager_get_service_app_info_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	ret = app_manager_get_service_app_info(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_service_get_app_info_n", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_service_get_app_info_n", "failed");
-	}
-}
-
-static void  utc_app_manager_get_service_app_info_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	char appid[256];
-	service_app_info_h app_info = NULL;
-
-	ret = app_manager_get_service_app_info("com.samsung.indicator", &app_info);
-	if (ret == APP_MANAGER_ERROR_NONE)
-		dts_pass("utc_app_manager_get_service_app_info_p", "passed");
-	else
-		dts_fail("utc_app_manager_get_service_app_info_p", "failed");
-}
-
-static void  utc_app_manager_get_ui_app_info_n(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	ret = app_manager_get_ui_app_info(NULL, NULL);
-
-	if(ret != APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_ui_get_app_info_n", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_ui_get_app_info_n", "failed");
-	}
-
-}
-
-static void  utc_app_manager_get_ui_app_info_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-	char appid[256];
-	ui_app_info_h app_info = NULL;
-
-	ret = app_manager_get_ui_app_info("com.samsung.indicator", &app_info);
-	if (ret == APP_MANAGER_ERROR_NONE)
-		dts_pass("utc_app_manager_get_ui_app_info_p", "passed");
-	else
-		dts_fail("utc_app_manager_get_ui_app_info_p", "failed");
-}
-
-static void  utc_app_manager_unset_app_list_changed_cb_p(void)
-{
-	int ret = APP_MANAGER_ERROR_NONE;
-
-	app_manager_set_app_list_changed_cb(dts_app_manager_app_list_changed_cb, NULL);
-
-	ret = app_manager_unset_app_list_changed_cb();
-
-	if(ret == APP_MANAGER_ERROR_NONE){
-		dts_pass("utc_app_manager_is_running_p", "passed");
-	}
-	else
-	{
-		dts_fail("utc_app_manager_is_running_p", "failed");
-   	}
 }

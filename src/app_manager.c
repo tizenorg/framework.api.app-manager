@@ -11,20 +11,22 @@
  * distributed under the License is distributed on an AS IS BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
 #include <unistd.h>
 
 #include <aul.h>
 #include <dlog.h>
 
 #include <app_manager.h>
-#include <app_manager_private.h>
+#include <app_manager_internal.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -38,28 +40,28 @@ static const char* app_manager_error_to_string(app_manager_error_e error)
 	switch (error)
 	{
 	case APP_MANAGER_ERROR_NONE:
-		return "NONE";
+		return "Successful";
 
 	case APP_MANAGER_ERROR_INVALID_PARAMETER:
-		return "INVALID_PARAMETER";
+		return "Invalid parameter";
 
 	case APP_MANAGER_ERROR_OUT_OF_MEMORY:
-		return "OUT_OF_MEMORY";
+		return "Out of memory";
 
 	case APP_MANAGER_ERROR_IO_ERROR:
-		return "IO_ERROR";
+		return "IO error";
 
 	case APP_MANAGER_ERROR_NO_SUCH_APP:
-		return "NO_SUCH_APP";
+		return "No such application";
 
 	case APP_MANAGER_ERROR_DB_FAILED:
-		return "DB_FAILED";
+		return "DB error";
 
 	case APP_MANAGER_ERROR_INVALID_PACKAGE:
-		return "INVALID_PACKAGE";
+		return "Invalid package";
 
-	default :
-		return "UNKNOWN";
+	default:
+		return "Unknown";
 	}
 }
 
@@ -67,11 +69,11 @@ int app_manager_error(app_manager_error_e error, const char* function, const cha
 {
 	if (description)
 	{
-		LOGE("[%s] %s(0x%08x) : %s", function, app_manager_error_to_string(error), error, description);	
+		LOGE("[%s] %s(0x%08x) : %s", function, app_manager_error_to_string(error), error, description);
 	}
 	else
 	{
-		LOGE("[%s] %s(0x%08x)", function, app_manager_error_to_string(error), error);	
+		LOGE("[%s] %s(0x%08x)", function, app_manager_error_to_string(error), error);
 	}
 
 	return error;
@@ -80,9 +82,7 @@ int app_manager_error(app_manager_error_e error, const char* function, const cha
 
 int app_manager_set_app_context_event_cb(app_manager_app_context_event_cb callback, void *user_data)
 {
-	int retval;
-
-	retval = app_context_set_event_cb(callback, user_data);
+	int retval = app_context_set_event_cb(callback, user_data);
 
 	if (retval != APP_MANAGER_ERROR_NONE)
 	{
@@ -101,9 +101,7 @@ void app_manager_unset_app_context_event_cb(void)
 
 int app_manager_foreach_app_context(app_manager_app_context_cb callback, void *user_data)
 {
-	int retval;
-
-	retval = app_context_foreach_app_context(callback, user_data);
+	int retval = app_context_foreach_app_context(callback, user_data);
 
 	if (retval != APP_MANAGER_ERROR_NONE)
 	{
@@ -117,9 +115,7 @@ int app_manager_foreach_app_context(app_manager_app_context_cb callback, void *u
 
 int app_manager_get_app_context(const char *app_id, app_context_h *app_context)
 {
-	int retval;
-
-	retval = app_context_get_app_context(app_id, app_context);
+	int retval = app_context_get_app_context(app_id, app_context);
 
 	if (retval != APP_MANAGER_ERROR_NONE)
 	{
@@ -134,6 +130,7 @@ int app_manager_get_app_context(const char *app_id, app_context_h *app_context)
 int app_manager_resume_app(app_context_h app_context)
 {
 	char *app_id;
+	int retval = APP_MANAGER_ERROR_NONE;
 
 	if (app_context == NULL)
 	{
@@ -145,16 +142,37 @@ int app_manager_resume_app(app_context_h app_context)
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, "failed to get the application ID");
 	}
 
-	aul_resume_app(app_id);
+	if (aul_app_is_running(app_id) == 0)
+	{
+		free(app_id);
+		return app_manager_error(APP_MANAGER_ERROR_APP_NO_RUNNING, __FUNCTION__, NULL);
+	}
 
+	retval = aul_resume_app(app_id);
+
+	if (retval == AUL_R_EINVAL)
+	{
+		free(app_id);
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_EILLACC)
+	{
+		free(app_id);
+		return app_manager_error(APP_MANAGER_ERROR_PERMISSION_DENIED, __FUNCTION__, NULL);
+	}
+	else if (retval < 0)
+	{
+		free(app_id);
+		return app_manager_error(APP_MANAGER_ERROR_REQUEST_FAILED, __FUNCTION__, NULL);
+	}
+
+	free(app_id);
 	return APP_MANAGER_ERROR_NONE;
 }
 
 int app_manager_set_app_info_event_cb(app_manager_app_info_event_cb callback, void *user_data)
 {
-	int retval;
-
-	retval = app_info_set_event_cb(callback, user_data);
+	int retval = app_info_set_event_cb(callback, user_data);
 
 	if (retval != APP_MANAGER_ERROR_NONE)
 	{
@@ -204,38 +222,6 @@ int app_manager_get_app_info(const char *app_id, app_info_h *app_info)
 	}
 }
 
-int app_manager_get_ui_app_info(const char *app_id, ui_app_info_h *ui_app_info)
-{
-	int retval;
-
-	retval = ui_app_info_get_app_info(app_id, ui_app_info);
-
-	if (retval != APP_MANAGER_ERROR_NONE)
-	{
-		return app_manager_error(retval, __FUNCTION__, NULL);
-	}
-	else
-	{
-		return APP_MANAGER_ERROR_NONE;
-	}
-}
-
-int app_manager_get_service_app_info(const char *app_id, service_app_info_h *service_app_info)
-{
-	int retval;
-
-	retval = service_app_info_get_app_info(app_id, service_app_info);
-
-	if (retval != APP_MANAGER_ERROR_NONE)
-	{
-		return app_manager_error(retval, __FUNCTION__, NULL);
-	}
-	else
-	{
-		return APP_MANAGER_ERROR_NONE;
-	}
-}
-
 int app_manager_get_package(pid_t pid, char **package)
 {
 	// TODO: this function must be deprecated
@@ -272,6 +258,7 @@ int app_manager_get_app_id(pid_t pid, char **app_id)
 
 int app_manager_terminate_app(app_context_h app_context)
 {
+	int retval = APP_MANAGER_ERROR_NONE;
 	pid_t pid = 0;
 
 	if (app_context == NULL)
@@ -283,7 +270,22 @@ int app_manager_terminate_app(app_context_h app_context)
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, "failed to get the process ID");
 	}
 
-	aul_terminate_pid(pid);
+	retval = aul_terminate_pid(pid);
+
+	if (retval == AUL_R_EINVAL)
+	{
+		LOGE("[%s] APP_MANAGER_ERROR_INVALID_PARAMETER(0x%08x) : Invalid param", __FUNCTION__, APP_MANAGER_ERROR_INVALID_PARAMETER);
+		return APP_MANAGER_ERROR_INVALID_PARAMETER;
+	}
+	else if (retval == AUL_R_EILLACC)
+	{
+		LOGE("[%s] APP_MANAGER_ERROR_PERMISSION_DENIED(0x%08x) : Permission denied", __FUNCTION__, APP_MANAGER_ERROR_PERMISSION_DENIED);
+		return APP_MANAGER_ERROR_PERMISSION_DENIED;
+	}
+	else if (retval < 0)
+	{
+		return APP_MANAGER_ERROR_REQUEST_FAILED;
+	}
 
 	return APP_MANAGER_ERROR_NONE;
 }
@@ -322,9 +324,130 @@ int app_manager_open_app(const char *app_id)
 		LOGE("[%s] APP_MANAGER_ERROR_INVALID_PARAMETER(0x%08x) : Invalid param", __FUNCTION__, APP_MANAGER_ERROR_INVALID_PARAMETER);
 		return APP_MANAGER_ERROR_INVALID_PARAMETER;
 	}
+	else if (retval == AUL_R_EILLACC)
+	{
+		LOGE("[%s] APP_MANAGER_ERROR_PERMISSION_DENIED(0x%08x) : Permission denied", __FUNCTION__, APP_MANAGER_ERROR_PERMISSION_DENIED);
+		return APP_MANAGER_ERROR_PERMISSION_DENIED;
+	}
 	else if (retval < 0)
 	{
-		return APP_MANAGER_ERROR_LAUNCH_REJECTED;
+		return APP_MANAGER_ERROR_REQUEST_FAILED;
+	}
+
+	return APP_MANAGER_ERROR_NONE;
+}
+
+int app_manager_get_shared_data_path(const char *app_id, char **path)
+{
+	int retval = aul_get_app_shared_data_path_by_appid(app_id, path);
+
+	if (retval == AUL_R_OK)
+	{
+		return APP_MANAGER_ERROR_NONE;
+	}
+	else if (retval == AUL_R_ENOAPP)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_EINVAL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_ERROR)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	else
+	{
+		LOGE("Assert! : unknown error (%d)", retval);
+		assert(false);
+	}
+
+	return APP_MANAGER_ERROR_NONE;
+}
+
+int app_manager_get_shared_resource_path(const char *app_id, char **path)
+{
+	int retval = aul_get_app_shared_resource_path_by_appid(app_id, path);
+
+	if (retval == AUL_R_OK)
+	{
+		return APP_MANAGER_ERROR_NONE;
+	}
+	else if (retval == AUL_R_ENOAPP)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_EINVAL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_ERROR)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	else
+	{
+		LOGE("Assert! : unknown error (%d)", retval);
+		assert(false);
+	}
+
+	return APP_MANAGER_ERROR_NONE;
+}
+
+int app_manager_get_shared_trusted_path(const char *app_id, char **path)
+{
+	int retval = aul_get_app_shared_trusted_path_by_appid(app_id, path);
+
+	if (retval == AUL_R_OK)
+	{
+		return APP_MANAGER_ERROR_NONE;
+	}
+	else if (retval == AUL_R_ENOAPP)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_EINVAL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_ERROR)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	else
+	{
+		LOGE("Assert! : unknown error (%d)", retval);
+		assert(false);
+	}
+
+	return APP_MANAGER_ERROR_NONE;
+}
+
+int app_manager_get_external_shared_data_path(const char *app_id, char **path)
+{
+	int retval = aul_get_app_external_shared_data_path_by_appid(app_id, path);
+
+	if (retval == AUL_R_OK)
+	{
+		return APP_MANAGER_ERROR_NONE;
+	}
+	else if (retval == AUL_R_ENOAPP)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_EINVAL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+	else if (retval == AUL_R_ERROR)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	else
+	{
+		LOGE("Assert! : unknown error (%d)", retval);
+		assert(false);
 	}
 
 	return APP_MANAGER_ERROR_NONE;

@@ -78,7 +78,7 @@ static void utc_app_manager_app_context_clone_p(void)
 	int ret = 0;
 	app_context_h app_context = NULL;
 	app_context_h app_context_cloned = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_clone_p", "failed");
@@ -110,7 +110,7 @@ static void utc_app_manager_app_context_destroy_p(void)
 {
 	int ret = 0;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_destroy_p", "failed");
@@ -137,7 +137,7 @@ static void utc_app_manager_app_context_get_appid_p(void)
 {
 	int ret = 0;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_get_appid_p", "failed");
@@ -170,7 +170,7 @@ static void utc_app_manager_app_context_get_package_p(void)
 {
 	int ret = 0;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_get_package_p", "failed");
@@ -204,7 +204,7 @@ static void utc_app_manager_app_context_get_pid_p(void)
 {
 	int ret = 0;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_get_pid_p", "failed");
@@ -239,13 +239,13 @@ static void utc_app_manager_app_context_is_equal_p(void)
 	app_context_h app_context1 = NULL;
 	app_context_h app_context2 = NULL;
 	bool equal = false;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context1);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context1);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_is_equal_p", "failed");
 		return;
 	}
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context2);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context2);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_is_equal_p", "failed");
@@ -273,7 +273,7 @@ static void utc_app_manager_app_context_is_terminated_p(void)
 {
 	int ret = 0;
 	app_context_h app_context = NULL;
-	ret = app_manager_get_app_context("com.samsung.indicator", &app_context);
+	ret = app_manager_get_app_context("org.tizen.indicator", &app_context);
 	if (ret != APP_MANAGER_ERROR_NONE){
 		//TODO: return as TC init fail
 		dts_fail("utc_app_manager_app_context_destroy_p", "failed");

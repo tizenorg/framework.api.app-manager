@@ -34,7 +34,7 @@ static void _print_help(const char *cmd)
 	fprintf(stderr, "[Get appinfo value]\n");
 	fprintf(stderr, "    %s <app_id>\n", cmd);
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Ex) %s com.samsung.memo\n", cmd);
+	fprintf(stderr, "Ex) %s org.tizen.memo\n", cmd);
 	fprintf(stderr, "\n");
 }
 
