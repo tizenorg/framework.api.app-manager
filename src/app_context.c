@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an AS IS BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 
@@ -28,13 +28,13 @@
 
 #include <app_context.h>
 #include <app_manager.h>
-#include <app_manager_private.h>
+#include <app_manager_internal.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG "TIZEN_N_APP_MANAGER"
+#define LOG_TAG "CAPI_APPFW_APP_MANAGER"
 
 #define APPID_MAX 128
 
@@ -73,7 +73,7 @@ static int app_context_foreach_app_context_cb(const aul_app_info *aul_app_contex
 	{
 		app_context_h app_context = NULL;
 
-		if (app_context_create(aul_app_context->pkg_name, aul_app_context->pid, &app_context) == APP_MANAGER_ERROR_NONE)
+		if (app_context_create(aul_app_context->appid, aul_app_context->pid, &app_context) == APP_MANAGER_ERROR_NONE)
 		{
 			foreach_context->iteration = foreach_context->callback(app_context, foreach_context->user_data);
 			app_context_destroy(app_context);
@@ -97,7 +97,10 @@ int app_context_foreach_app_context(app_manager_app_context_cb callback, void *u
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	aul_app_get_running_app_info(app_context_foreach_app_context_cb, &foreach_context);
+	if (aul_app_get_running_app_info(app_context_foreach_app_context_cb, &foreach_context) != AUL_R_OK)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_IO_ERROR, __FUNCTION__, NULL);
+	}
 
 	return APP_MANAGER_ERROR_NONE;
 }
@@ -109,7 +112,7 @@ static int app_context_retrieve_app_context(const aul_app_info *aul_app_context,
 
 	if (aul_app_context != NULL && retrieval_context != NULL && retrieval_context->matched == false)
 	{
-		if (!strcmp(aul_app_context->pkg_name, retrieval_context->app_id))
+		if (!strcmp(aul_app_context->appid, retrieval_context->app_id))
 		{
 			retrieval_context->pid = aul_app_context->pid;
 			retrieval_context->matched = true;
@@ -137,7 +140,7 @@ int app_context_get_app_context(const char *app_id, app_context_h *app_context)
 		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
 	}
 
-	aul_app_get_running_app_info(app_context_retrieve_app_context, &retrieval_context);
+	aul_get_running_app_info_from_memory(app_context_retrieve_app_context, &retrieval_context);
 
 	if (retrieval_context.matched == false)
 	{
@@ -157,7 +160,7 @@ static int app_context_get_app_context_by_pid(pid_t pid, app_context_h *app_cont
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	if (aul_app_get_pkgname_bypid(pid, appid, sizeof(appid)) != AUL_R_OK)
+	if (aul_app_get_appid_bypid(pid, appid, sizeof(appid)) != AUL_R_OK)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_NO_SUCH_APP, __FUNCTION__, NULL);
 	}
@@ -272,7 +275,7 @@ int app_context_is_terminated(app_context_h app_context, bool *terminated)
 	{
 		char appid[APPID_MAX] = {0, };
 
-		if (aul_app_get_pkgname_bypid(app_context->pid, appid, sizeof(appid)) == AUL_R_OK)
+		if (aul_app_get_appid_bypid(app_context->pid, appid, sizeof(appid)) == AUL_R_OK)
 		{
 			*terminated = false;
 		}
@@ -348,7 +351,7 @@ static bool app_context_load_all_app_context_cb_locked(app_context_h app_context
 
 	if (app_context_clone(&app_context_cloned, app_context) == APP_MANAGER_ERROR_NONE)
 	{
-		LOGI("[%s] app_id(%s), pid(%d)", __FUNCTION__, app_context->app_id, app_context->pid);
+		SECURE_LOGI("[%s] app_id(%s), pid(%d)", __FUNCTION__, app_context->app_id, app_context->pid);
 
 		if (event_cb_context != NULL && event_cb_context->pid_table != NULL)
 		{
@@ -372,9 +375,9 @@ static void app_context_pid_table_entry_destroyed_cb(void * data)
 	{
 		char *app_id;
 		int pid;
-		app_context_get_package(app_context, &app_id);
+		app_context_get_app_id(app_context, &app_id);
 		app_context_get_pid(app_context, &pid);
-		LOGI("[%s] app_id(%s), pid(%d)", __FUNCTION__, app_context->app_id, app_context->pid);
+		SECURE_LOGI("[%s] app_id(%s), pid(%d)", __FUNCTION__, app_context->app_id, app_context->pid);
 		free(app_id);
 
 		app_context_destroy(app_context);
@@ -452,7 +455,7 @@ int app_context_set_event_cb(app_manager_app_context_event_cb callback, void *us
 		}
 
 		event_cb_context->pid_table = g_hash_table_new_full(g_int_hash, g_int_equal, NULL, app_context_pid_table_entry_destroyed_cb);
-	
+
 		if (event_cb_context->pid_table == NULL)
 		{
 			return app_manager_error(APP_MANAGER_ERROR_IO_ERROR, __FUNCTION__, "failed to initialize pid-table");
@@ -464,7 +467,7 @@ int app_context_set_event_cb(app_manager_app_context_event_cb callback, void *us
 		aul_listen_app_launch_signal(app_context_launched_event_cb, NULL);
 
 	}
-	
+
 	event_cb_context->callback = callback;
 	event_cb_context->user_data = user_data;
 
