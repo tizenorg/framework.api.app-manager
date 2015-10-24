@@ -24,9 +24,9 @@
 #include <package-manager.h>
 #include <dlog.h>
 
-#include <app_info.h>
-#include <app_manager.h>
-#include <app_manager_internal.h>
+#include "app_info.h"
+#include "app_manager.h"
+#include "app_manager_internal.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -98,7 +98,7 @@ static int app_info_convert_bool_property(const char *property, char **converted
 	return 0;
 }
 
-int app_info_foreach_app_filter_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
+static int app_info_foreach_app_filter_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 {
 	int retval = 0;
 	char *appid = NULL;
@@ -124,6 +124,13 @@ int app_info_foreach_app_filter_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 	}
 
 	info->app_id = strdup(appid);
+	if (info->app_id == NULL) {
+		if(info){
+			free(info);
+			info = NULL;
+		}
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
 	info->pkg_app_info = handle;
 
 	iteration_next = foreach_context->callback(info, foreach_context->user_data);
@@ -161,7 +168,7 @@ static int app_info_foreach_app_metadata_cb(const char *metadata_key, const char
 		return PMINFO_R_ERROR;
 }
 
-int app_info_foreach_app_info_cb(pkgmgrinfo_appinfo_h handle, void *cb_data)
+static int app_info_foreach_app_info_cb(pkgmgrinfo_appinfo_h handle, void *cb_data)
 {
 	foreach_context_s *foreach_context = cb_data;
 	app_info_h app_info = NULL;
@@ -219,7 +226,7 @@ int app_info_get_app_info(const char *app_id, app_info_h *app_info)
 	return app_info_create(app_id, app_info);
 }
 
-int app_info_create(const char *app_id, app_info_h *app_info)
+API int app_info_create(const char *app_id, app_info_h *app_info)
 {
 	pkgmgrinfo_pkginfo_h pkginfo = NULL;
 	pkgmgrinfo_appinfo_h appinfo = NULL;
@@ -267,7 +274,7 @@ int app_info_create(const char *app_id, app_info_h *app_info)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_destroy(app_info_h app_info)
+API int app_info_destroy(app_info_h app_info)
 {
 	if (app_info == NULL)
 	{
@@ -282,11 +289,16 @@ int app_info_destroy(app_info_h app_info)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_app_id(app_info_h app_info, char **app_id)
+API int app_info_get_app_id(app_info_h app_info, char **app_id)
 {
-	char *app_id_dup;
+	char *app_id_dup = NULL;
 
 	if (app_info == NULL || app_id == NULL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
+
+	if (app_info->app_id == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
@@ -303,17 +315,22 @@ int app_info_get_app_id(app_info_h app_info, char **app_id)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_exec(app_info_h app_info, char **exec)
+API int app_info_get_exec(app_info_h app_info, char **exec)
 {
-	char *val;
-	char *app_exec_dup;
+	char *val = NULL;
+	char *app_exec_dup = NULL;
+	int ret = -1;
 
 	if (app_info == NULL || exec == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_exec(app_info->pkg_app_info, &val);
+	ret = pkgmgrinfo_appinfo_get_exec(app_info->pkg_app_info, &val);
+	if (ret != PMINFO_R_OK)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 	if (val == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
@@ -330,17 +347,21 @@ int app_info_get_exec(app_info_h app_info, char **exec)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_label(app_info_h app_info, char **label)
+API int app_info_get_label(app_info_h app_info, char **label)
 {
-	char *val;
-	char *app_label_dup;
+	char *val = NULL;
+	char *app_label_dup = NULL;
+	int ret = 0;
 
 	if (app_info == NULL || label == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_label(app_info->pkg_app_info, &val);
+	ret = pkgmgrinfo_appinfo_get_label(app_info->pkg_app_info, &val);
+	if (ret < 0){
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 	if (val == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
@@ -357,17 +378,24 @@ int app_info_get_label(app_info_h app_info, char **label)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_localed_label(const char *app_id, const char *locale, char **label)
+API int app_info_get_localed_label(const char *app_id, const char *locale, char **label)
 {
-	char *val;
-	char *app_label_dup;
+	char *val = NULL;
+	char *app_label_dup = NULL;
+	int ret = 0;
 
 	if (app_id == NULL || locale == NULL || label == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_localed_label(app_id, locale, &val);
+	ret = pkgmgrinfo_appinfo_get_localed_label(app_id, locale, &val);
+	if (ret < 0)
+	{
+		if (val)
+			free(val);
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 	if (val == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
@@ -376,7 +404,10 @@ int app_info_get_localed_label(const char *app_id, const char *locale, char **la
 	app_label_dup = strdup(val);
 	if (app_label_dup == NULL)
 	{
-		free(val);
+		if(val) {
+			free(val);
+			val = NULL;
+		}
 		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
 	}
 
@@ -386,17 +417,22 @@ int app_info_get_localed_label(const char *app_id, const char *locale, char **la
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_icon(app_info_h app_info, char **path)
+API int app_info_get_icon(app_info_h app_info, char **path)
 {
-	char *val;
-	char *app_icon_dup;
+	char *val = NULL;
+	char *app_icon_dup = NULL;
+	int ret = -1;
 
 	if (app_info == NULL || path == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_icon(app_info->pkg_app_info, &val);
+	ret = pkgmgrinfo_appinfo_get_icon(app_info->pkg_app_info, &val);
+	if (ret != PMINFO_R_OK)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 	if (val == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
@@ -413,17 +449,26 @@ int app_info_get_icon(app_info_h app_info, char **path)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_get_package(app_info_h app_info, char **package)
+API int app_info_get_package(app_info_h app_info, char **package)
 {
-	char *val;
-	char *app_package_dup;
+	char *val = NULL;
+	char *app_package_dup = NULL;
+	int ret = 0;
 
 	if (app_info == NULL || package == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_pkgname(app_info->pkg_app_info, &val);
+	ret = pkgmgrinfo_appinfo_get_pkgname(app_info->pkg_app_info, &val);
+	if (ret < 0)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	if (val == NULL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 
 	app_package_dup = strdup(val);
 	if (app_package_dup == NULL)
@@ -436,18 +481,26 @@ int app_info_get_package(app_info_h app_info, char **package)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-
-int app_info_get_type(app_info_h app_info, char **type)
+API int app_info_get_type(app_info_h app_info, char **type)
 {
-	char *val;
-	char *app_type_dup;
+	char *val = NULL;
+	char *app_type_dup = NULL;
+	int ret = 0;
 
 	if (app_info == NULL || type == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
-	pkgmgrinfo_appinfo_get_apptype(app_info->pkg_app_info, &val);
+	ret = pkgmgrinfo_appinfo_get_apptype(app_info->pkg_app_info, &val);
+	if (ret < 0)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+	}
+	if (val == NULL)
+	{
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	}
 
 	app_type_dup = strdup(val);
 	if (app_type_dup == NULL)
@@ -460,7 +513,7 @@ int app_info_get_type(app_info_h app_info, char **type)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_foreach_metadata(app_info_h app_info, app_info_metadata_cb callback, void *user_data)
+API int app_info_foreach_metadata(app_info_h app_info, app_info_metadata_cb callback, void *user_data)
 {
 	int retval = 0;
 
@@ -477,13 +530,13 @@ int app_info_foreach_metadata(app_info_h app_info, app_info_metadata_cb callback
 	retval = pkgmgrinfo_appinfo_foreach_metadata(app_info->pkg_app_info, app_info_foreach_app_metadata_cb, &foreach_context);
 	if (retval < 0)
 	{
-		return app_manager_error(APP_MANAGER_ERROR_IO_ERROR, __FUNCTION__, NULL);
+		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 	}
 
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_is_nodisplay(app_info_h app_info, bool *nodisplay)
+API int app_info_is_nodisplay(app_info_h app_info, bool *nodisplay)
 {
 	bool val;
 
@@ -499,7 +552,7 @@ int app_info_is_nodisplay(app_info_h app_info, bool *nodisplay)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_is_enabled(app_info_h app_info, bool *enabled)
+API int app_info_is_enabled(app_info_h app_info, bool *enabled)
 {
 	bool val;
 
@@ -516,7 +569,7 @@ int app_info_is_enabled(app_info_h app_info, bool *enabled)
 
 }
 
-int app_info_is_equal(app_info_h lhs, app_info_h rhs, bool *equal)
+API int app_info_is_equal(app_info_h lhs, app_info_h rhs, bool *equal)
 {
 	if (lhs == NULL || rhs == NULL || equal == NULL)
 	{
@@ -535,7 +588,7 @@ int app_info_is_equal(app_info_h lhs, app_info_h rhs, bool *equal)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_is_onboot(app_info_h app_info, bool *onboot)
+API int app_info_is_onboot(app_info_h app_info, bool *onboot)
 {
 	bool val;
 
@@ -553,7 +606,7 @@ int app_info_is_onboot(app_info_h app_info, bool *onboot)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_is_preload(app_info_h app_info, bool *preload)
+API int app_info_is_preload(app_info_h app_info, bool *preload)
 {
 	bool val;
 
@@ -571,7 +624,7 @@ int app_info_is_preload(app_info_h app_info, bool *preload)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_clone(app_info_h *clone, app_info_h app_info)
+API int app_info_clone(app_info_h *clone, app_info_h app_info)
 {
 	int retval;
 
@@ -641,6 +694,7 @@ static int app_info_package_event_listener_cb(
 
 int app_info_set_event_cb(app_manager_app_info_event_cb callback, void *user_data)
 {
+	int ret = -1;
 	if (callback == NULL)
 	{
 		return app_manager_error(APP_MANAGER_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
@@ -659,7 +713,10 @@ int app_info_set_event_cb(app_manager_app_info_event_cb callback, void *user_dat
 	app_info_event_cb = callback;
 	app_info_event_cb_data = user_data;
 
-	pkgmgr_client_listen_status(package_event_listener, app_info_package_event_listener_cb, NULL);
+	ret = pkgmgr_client_listen_status(package_event_listener, app_info_package_event_listener_cb, NULL);
+	if (ret < 0) {
+		return app_manager_error(APP_MANAGER_ERROR_REQUEST_FAILED, __FUNCTION__, NULL);
+	}
 
 	return APP_MANAGER_ERROR_NONE;
 }
@@ -677,7 +734,7 @@ void app_info_unset_event_cb(void)
 	app_info_event_cb_data = NULL;
 }
 
-int app_info_filter_create(app_info_filter_h *handle)
+API int app_info_filter_create(app_info_filter_h *handle)
 {
 	int retval = 0;
 	app_info_filter_h filter_created = NULL;
@@ -707,7 +764,7 @@ int app_info_filter_create(app_info_filter_h *handle)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_filter_destroy(app_info_filter_h handle)
+API int app_info_filter_destroy(app_info_filter_h handle)
 {
 	int retval = 0;
 
@@ -726,7 +783,7 @@ int app_info_filter_destroy(app_info_filter_h handle)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_filter_add_bool(app_info_filter_h handle, const char *property, const bool value)
+API int app_info_filter_add_bool(app_info_filter_h handle, const char *property, const bool value)
 {
 	int retval = 0;
 	char *converted_property = NULL;
@@ -751,7 +808,7 @@ int app_info_filter_add_bool(app_info_filter_h handle, const char *property, con
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_filter_add_string(app_info_filter_h handle, const char *property, const char *value)
+API int app_info_filter_add_string(app_info_filter_h handle, const char *property, const char *value)
 {
 	int retval = 0;
 	char *converted_property = NULL;
@@ -776,7 +833,7 @@ int app_info_filter_add_string(app_info_filter_h handle, const char *property, c
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_filter_count_appinfo(app_info_filter_h handle, int *count)
+API int app_info_filter_count_appinfo(app_info_filter_h handle, int *count)
 {
 	int retval = 0;
 
@@ -794,7 +851,7 @@ int app_info_filter_count_appinfo(app_info_filter_h handle, int *count)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_filter_foreach_appinfo(app_info_filter_h handle, app_info_filter_cb callback, void * user_data)
+API int app_info_filter_foreach_appinfo(app_info_filter_h handle, app_info_filter_cb callback, void * user_data)
 {
 	int retval = 0;
 
@@ -817,7 +874,7 @@ int app_info_filter_foreach_appinfo(app_info_filter_h handle, app_info_filter_cb
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_metadata_filter_create(app_info_metadata_filter_h *handle)
+API int app_info_metadata_filter_create(app_info_metadata_filter_h *handle)
 {
 	int retval = 0;
 	app_info_metadata_filter_h filter_created = NULL;
@@ -847,7 +904,7 @@ int app_info_metadata_filter_create(app_info_metadata_filter_h *handle)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_metadata_filter_destroy(app_info_metadata_filter_h handle)
+API int app_info_metadata_filter_destroy(app_info_metadata_filter_h handle)
 {
 	int retval = 0;
 
@@ -866,7 +923,7 @@ int app_info_metadata_filter_destroy(app_info_metadata_filter_h handle)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_metadata_filter_add(app_info_metadata_filter_h handle, const char *key, const char *value)
+API int app_info_metadata_filter_add(app_info_metadata_filter_h handle, const char *key, const char *value)
 {
 	int retval = 0;
 
@@ -884,7 +941,7 @@ int app_info_metadata_filter_add(app_info_metadata_filter_h handle, const char *
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_info_metadata_filter_foreach(app_info_metadata_filter_h handle, app_info_filter_cb callback, void *user_data)
+API int app_info_metadata_filter_foreach(app_info_metadata_filter_h handle, app_info_filter_cb callback, void *user_data)
 {
 	int retval = 0;
 

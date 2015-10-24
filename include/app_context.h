@@ -37,14 +37,14 @@ extern "C" {
 
 /**
  * @brief  Application context handle.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @since_tizen  @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
  */
 typedef struct app_context_s *app_context_h;
 
 
 /**
  * @brief  Enumeration for Application Context Event.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @since_tizen 2.4
  */
 typedef enum
 {
@@ -69,11 +69,11 @@ int app_context_destroy(app_context_h app_context);
 
 /**
  * @deprecated Deprecated since 2.3.1. Use app_context_get_app_id() instead.
- * @brief    Gets the application ID with the given application context.
+ * @brief    Gets the package with the given application context.
  * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
- * @remarks     You must release @a package using free().
+ * @remarks You must release @a package using free().
  * @param[in]   app_context  The application context
- * @param[out]  package      The application ID of the given application context
+ * @param[out]  package      The package of the given application context
  * @return      @c 0 on success,
  *              otherwise a negative error value
  * @retval  #APP_MANAGER_ERROR_NONE               Successful

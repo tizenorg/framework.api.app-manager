@@ -26,9 +26,9 @@
 #include <aul.h>
 #include <dlog.h>
 
-#include <app_context.h>
-#include <app_manager.h>
-#include <app_manager_internal.h>
+#include "app_context.h"
+#include "app_manager.h"
+#include "app_manager_internal.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -82,7 +82,6 @@ static int app_context_foreach_app_context_cb(const aul_app_info *aul_app_contex
 
 	return 0;
 }
-
 
 int app_context_foreach_app_context(app_manager_app_context_cb callback, void *user_data)
 {
@@ -206,7 +205,7 @@ static int app_context_create(const char *app_id, pid_t pid, app_context_h *app_
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_context_destroy(app_context_h app_context)
+API int app_context_destroy(app_context_h app_context)
 {
 	if (app_context == NULL)
 	{
@@ -219,14 +218,14 @@ int app_context_destroy(app_context_h app_context)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_context_get_package(app_context_h app_context, char **package)
+API int app_context_get_package(app_context_h app_context, char **package)
 {
 	// TODO: this function must be deprecated
 	return app_context_get_app_id(app_context, package);
 }
 
 
-int app_context_get_app_id(app_context_h app_context, char **app_id)
+API int app_context_get_app_id(app_context_h app_context, char **app_id)
 {
 	char *app_id_dup;
 
@@ -247,8 +246,7 @@ int app_context_get_app_id(app_context_h app_context, char **app_id)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-
-int app_context_get_pid(app_context_h app_context, pid_t *pid)
+API int app_context_get_pid(app_context_h app_context, pid_t *pid)
 {
 	if (app_context == NULL || pid == NULL)
 	{
@@ -260,7 +258,7 @@ int app_context_get_pid(app_context_h app_context, pid_t *pid)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_context_is_terminated(app_context_h app_context, bool *terminated)
+API int app_context_is_terminated(app_context_h app_context, bool *terminated)
 {
 	if (app_context == NULL || terminated == NULL)
 	{
@@ -288,7 +286,7 @@ int app_context_is_terminated(app_context_h app_context, bool *terminated)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_context_is_equal(app_context_h lhs, app_context_h rhs, bool *equal)
+API int app_context_is_equal(app_context_h lhs, app_context_h rhs, bool *equal)
 {
 	if (lhs == NULL || rhs == NULL || equal == NULL)
 	{
@@ -307,7 +305,7 @@ int app_context_is_equal(app_context_h lhs, app_context_h rhs, bool *equal)
 	return APP_MANAGER_ERROR_NONE;
 }
 
-int app_context_clone(app_context_h *clone, app_context_h app_context)
+API int app_context_clone(app_context_h *clone, app_context_h app_context)
 {
 	int retval;
 
@@ -374,9 +372,16 @@ static void app_context_pid_table_entry_destroyed_cb(void * data)
 	if (app_context != NULL)
 	{
 		char *app_id;
-		int pid;
-		app_context_get_app_id(app_context, &app_id);
-		app_context_get_pid(app_context, &pid);
+		int pid = 0;
+		int ret = 0;
+		ret = app_context_get_app_id(app_context, &app_id);
+		if (ret < 0) {
+			SECURE_LOGI("app_context_get_app_id is failed.");
+		}
+		ret = app_context_get_pid(app_context, &pid);
+		if (ret < 0) {
+			SECURE_LOGI("app_context_get_pid is failed");
+		}
 		SECURE_LOGI("[%s] app_id(%s), pid(%d)", __FUNCTION__, app_context->app_id, app_context->pid);
 		free(app_id);
 
@@ -492,4 +497,3 @@ void app_context_unset_event_cb(void)
 
 	app_context_unlock_event_cb_context();
 }
-

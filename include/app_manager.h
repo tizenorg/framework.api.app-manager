@@ -55,9 +55,8 @@ typedef enum
 } app_manager_error_e;
 
 /**
- * @internal
  * @brief  Called when an application is launched or terminated.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @since_tizen 2.4
  * @param[in]   app_context  The application context of the application launched or terminated
  * @param[in]   event        The application context event
  * @param[in]   user_data    The user data passed from the foreach function
@@ -92,9 +91,8 @@ typedef bool (*app_manager_app_context_cb) (app_context_h app_context, void *use
 typedef bool (*app_manager_app_info_cb) (app_info_h app_info, void *user_data);
 
 /**
- * @internal
  * @brief  Registers a callback function to be invoked when the applications get launched or terminated.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @since_tizen 2.4
  * @privlevel public
  * @privilege %http://tizen.org/privilege/packagemanager.info
  * @param[in]   callback   The callback function to register
@@ -112,9 +110,8 @@ typedef bool (*app_manager_app_info_cb) (app_info_h app_info, void *user_data);
 int app_manager_set_app_context_event_cb(app_manager_app_context_event_cb callback, void *user_data);
 
 /**
- * @internal
  * @brief   Unregisters the callback function.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @since_tizen 2.4
  * @see app_manager_set_app_event_cb()
  * @see app_manager_app_context_event_cb()
  */
@@ -204,37 +201,22 @@ int app_manager_is_running(const char *app_id, bool *running);
 int app_manager_resume_app(app_context_h app_context);
 
 /**
- * @internal
- * @brief  Opens the application.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
+ * @brief  Terminates the back ground application.\n
+ *         UI applications that are in paused state or some service applications could be required to terminate by this API.
+ * @since_tizen 2.4
  * @privlevel public
- * @privilege %http://tizen.org/privilege/appmanager.launch
- * @param[in]   app_id  The ID of the application
- * @return      @c 0 on success,
- *              otherwise a negative error value
- * @retval  #APP_MANAGER_ERROR_NONE               Successful
- * @retval  #APP_MANAGER_ERROR_INVALID_PARAMETER  Invalid parameter
- * @retval  #APP_MANAGER_ERROR_NO_SUCH_APP  No such application
- * @retval  #APP_MANAGER_ERROR_REQUEST_FAILED  Internal open error
- * @retval #APP_MANAGER_ERROR_PERMISSION_DENIED Permission denied
- */
-int app_manager_open_app(const char *app_id);
-
-/**
- * @internal
- * @brief  Terminates the application.
- * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
- * @privlevel platform
- * @privilege %http://tizen.org/privilege/appmanager.kill
+ * @privilege %http://tizen.org/privilege/appmanager.kill.bgapp
+ * @remarks This function returns after it just sends a request for terminating a background application.\n
+ *          Platform will decide if the target application could be terminated or not according to the state of the target application.
  * @param[in]   app_context  The application context
  * @return      @c 0 on success,
  *              otherwise a negative error value
  * @retval  #APP_MANAGER_ERROR_NONE               Successful
  * @retval  #APP_MANAGER_ERROR_INVALID_PARAMETER  Invalid parameter
- * @retval  #APP_MANAGER_ERROR_REQUEST_FAILED  Internal terminate error
+ * @retval  #APP_MANAGER_ERROR_REQUEST_FAILED  Failed to send terminate request
  * @retval #APP_MANAGER_ERROR_PERMISSION_DENIED Permission denied
  */
-int app_manager_terminate_app(app_context_h app_context);
+int app_manager_request_terminate_bg_app(app_context_h app_context);
 
 /**
  * @brief  Retrieves all installed applications information.
@@ -330,11 +312,13 @@ int app_manager_get_shared_resource_path(const char *app_id, char **path);
 int app_manager_get_shared_trusted_path(const char *app_id, char **path);
 
 /**
+ * @deprecated Deprecated since 2.4.
  * @brief  Gets the absolute path to the shared data directory of the application specified
  *         with an application ID.
  * @details     An application can only read the files of other application's shared data directory.
  * @since_tizen @if MOBILE 2.3 @elseif WEARABLE 2.3.1 @endif
  * @remarks     The specified @a path should be released.
+ * @remarks     To access the path returned by this function may not work as intended in certain devices due to some implementation issues.
  *
  * @param[in]      app_id  The ID of the application
  * @param[in,out]  path    The absolute path to the shared data directory of the application

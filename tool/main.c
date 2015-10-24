@@ -26,6 +26,7 @@ related to this software.
 #include <app_manager.h>
 
 
+#define STRING_LEN_MAX 512
 
 static void _print_help(const char *cmd)
 {
@@ -85,12 +86,17 @@ static int _get_appinfo(const char *app_id)
 int main(int argc, char** argv)
 {
 	int ret = APP_MANAGER_ERROR_NONE;
+	char arg_0[STRING_LEN_MAX + 1] = {0,};
+	char arg_1[STRING_LEN_MAX + 1] = {0,};
+
+	snprintf(arg_0, STRING_LEN_MAX, "%s", argv[0]);
+	snprintf(arg_1, STRING_LEN_MAX, "%s", argv[1]);
 
 	if (2 == argc) {
-		ret = _get_appinfo(argv[1]);
+		ret = _get_appinfo(arg_1);
 	}
 	else {
-		_print_help(argv[0]);
+		_print_help(arg_0);
 		return EXIT_FAILURE;
 	}
 
